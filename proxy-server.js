@@ -1,4 +1,4 @@
-// proxy-server.js
+// AetherOS Proxy Backend
 const express = require("express");
 const axios = require("axios");
 const cheerio = require("cheerio");
@@ -6,7 +6,7 @@ const cheerio = require("cheerio");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS headers
+// Allow cross-origin requests
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   next();
@@ -18,11 +18,12 @@ app.get("/proxy", async (req, res) => {
   if (!targetUrl) return res.send("No URL specified.");
 
   try {
+    // Fetch the target URL
     const response = await axios.get(targetUrl, { responseType: "arraybuffer" });
     const contentType = response.headers["content-type"];
 
+    // HTML content: rewrite assets
     if (contentType && contentType.includes("text/html")) {
-      // Rewrite HTML to proxy all assets
       let html = response.data.toString("utf-8");
       const $ = cheerio.load(html);
 
@@ -38,14 +39,14 @@ app.get("/proxy", async (req, res) => {
 
       res.send($.html());
     } else {
-      // Send binary content
+      // Non-HTML content (images, JS, CSS, fonts)
       res.setHeader("Content-Type", contentType);
       res.send(response.data);
     }
   } catch (err) {
-    console.error(err.message);
+    console.error("Error fetching:", err.message);
     res.status(500).send("Error fetching URL.");
   }
 });
 
-app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
+app.listen(PORT, () => console.log(`AetherOS proxy running on port ${PORT}`));
